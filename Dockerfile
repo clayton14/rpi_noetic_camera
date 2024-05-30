@@ -2,6 +2,13 @@
 # generated from docker_images/create_ros_core_image.Dockerfile.em
 FROM ubuntu:focal
 
+# set default shell
+SHELL ["/bin/bash", "-c"]
+
+#update sources.list
+COPY ./sources.list /etc/apt/source.list
+
+
 # setup timezone
 RUN echo 'Etc/UTC' > /etc/timezone && \
     ln -s /usr/share/zoneinfo/Etc/UTC /etc/localtime && \
@@ -10,9 +17,17 @@ RUN echo 'Etc/UTC' > /etc/timezone && \
     rm -rf /var/lib/apt/lists/*
 
 # install packages
-RUN apt-get update && apt-get install -q -y --no-install-recommends \
+RUN apt-get update && apt-get upgrade -y  
+RUN apt-get install -q -y --no-install-recommends \
+    build-essential \
     dirmngr \
     gnupg2 \
+    apt-utils \
+    curl \
+    wget \
+    git \
+    ffmpeg \
+    v4l-utils \
     && rm -rf /var/lib/apt/lists/*
 
 # setup keys
@@ -45,20 +60,20 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 
 
 # Setup Ros workspace
-RUN source /opt/ros/$ROS_DISTRO/setup.bash --
-RUN mkdir -p ~/catkin_ws/src
-RUN catkin_make
-RUN source devel/setup.bash
-RUN echo "[ROS TEST] package path is -> $ROS_PACKAGE_PATH)"
+RUN source /opt/ros/$ROS_DISTRO/setup.bash -- \
+    && mkdir -p /home/catkin_ws/src \
+    && cd /home/catkin_ws \
+    && catkin_make \
+    && source devel/setup.bash \
+    && echo "[ROS TEST] package path is -> $ROS_PACKAGE_PATH) " 
 
-
-# setup entrypoint
+    # setup entrypoint
 COPY ./ros_entrypoint.sh /
 COPY ./camera_node.py /home/
 
 
 
-ENTRYPOINT ["/ros_entrypoint.sh"]
+#ENTRYPOINT ["/ros_entrypoint.sh"]
 
 
 
