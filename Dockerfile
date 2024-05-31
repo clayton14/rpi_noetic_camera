@@ -10,11 +10,11 @@ COPY ./sources.list /etc/apt/source.list
 
 
 # setup timezone
-RUN echo 'Etc/UTC' > /etc/timezone && \
-    ln -s /usr/share/zoneinfo/Etc/UTC /etc/localtime && \
-    apt-get update && \
-    apt-get install -q -y --no-install-recommends tzdata && \
-    rm -rf /var/lib/apt/lists/*
+# RUN echo 'Etc/UTC' > /etc/timezone && \
+#     ln -s /usr/share/zoneinfo/Etc/UTC /etc/localtime && \
+#     apt-get update && \
+#     apt-get install -q -y --no-install-recommends tzdata && \
+#     rm -rf /var/lib/apt/lists/*
 
 # install packages
 RUN apt-get update && apt-get upgrade -y  
@@ -64,18 +64,13 @@ ENV LC_ALL C.UTF-8
 
 ENV PORT=11311
 ENV ROS_DISTRO noetic
-
+ENV
 
 EXPOSE 11311
 # install ros packages
 RUN apt-get update && apt-get install -y --no-install-recommends \
     ros-noetic-ros-base=1.5.0-1* \
     && rm -rf /var/lib/apt/lists/*
-
-# RUN apt-get update && apt-get install -y --no-install-recommends \
-#     ros-noetic-ros-core=1.5.0-1* \
-#     python3-catkin-tools \
-#     && rm -rf /var/lib/apt/lists/*
 
 
 # Setup Ros workspace
@@ -88,7 +83,7 @@ RUN source /opt/ros/$ROS_DISTRO/setup.bash -- \
 
 # Setup python venv and opencv-bridge
 # install cv-bridge and create camera package
-#RUN apt-get install ros-$ROS_DISTRO-cv-bridge -y
+RUN apt-get install ros-$ROS_DISTRO-cv-bridge -y
 
 
 
@@ -104,7 +99,6 @@ RUN python3 -m venv venv \
     
 COPY ./ros_entrypoint.sh /
 COPY ./camera_node.py /home/catkin_ws/src/camera/src
-
 
 
 #ENTRYPOINT ["/ros_entrypoint.sh"]
