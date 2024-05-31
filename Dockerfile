@@ -91,4 +91,6 @@ COPY ./ros_entrypoint.sh /
 COPY ./camera_node.py /home/catkin_ws/src/camera/src
 COPY ./camera.launch  /home/catkin_ws/src/camera/src
 
-# RUN roslaunch camera
+RUN rosrun camera camera_node.py
+
+ENTRYPOINT [ "ros_entrypoint.sh" ]
