@@ -1,6 +1,6 @@
 # This is an auto generated Dockerfile for ros:ros-core
 # generated from docker_images/create_ros_core_image.Dockerfile.em
-FROM ubuntu:focal
+FROM ros:noetic-ros-core-focal
 
 # set default shell
 SHELL ["/bin/bash", "-c"]
@@ -20,6 +20,12 @@ RUN echo 'Etc/UTC' > /etc/timezone && \
 RUN apt-get update && apt-get upgrade -y  
 RUN apt-get install -q -y --no-install-recommends \
     build-essential \
+    python3-pip \
+    python3.8-venv \
+    build-essential \
+    python3-rosdep \
+    python3-rosinstall \
+    python3-vcstools \
     dirmngr \
     gnupg2 \
     apt-utils \
@@ -28,7 +34,15 @@ RUN apt-get install -q -y --no-install-recommends \
     git \
     ffmpeg \
     v4l-utils \
+    python3-numpy \
+    python3-opencv \
+    libboost-python-dev \
     && rm -rf /var/lib/apt/lists/*
+
+
+# bootstrap rosdep
+RUN rosdep init && \
+  rosdep update --rosdistro $ROS_DISTRO
 
 # setup keys
 RUN set -eux; \
@@ -55,8 +69,13 @@ ENV ROS_DISTRO noetic
 EXPOSE 11311
 # install ros packages
 RUN apt-get update && apt-get install -y --no-install-recommends \
-    ros-noetic-ros-core=1.5.0-1* \
+    ros-noetic-ros-base=1.5.0-1* \
     && rm -rf /var/lib/apt/lists/*
+
+# RUN apt-get update && apt-get install -y --no-install-recommends \
+#     ros-noetic-ros-core=1.5.0-1* \
+#     python3-catkin-tools \
+#     && rm -rf /var/lib/apt/lists/*
 
 
 # Setup Ros workspace
@@ -67,9 +86,24 @@ RUN source /opt/ros/$ROS_DISTRO/setup.bash -- \
     && source devel/setup.bash \
     && echo "[ROS TEST] package path is -> $ROS_PACKAGE_PATH) " 
 
-    # setup entrypoint
+# Setup python venv and opencv-bridge
+# install cv-bridge and create camera package
+#RUN apt-get install ros-$ROS_DISTRO-cv-bridge -y
+
+
+
+RUN cd /home/catkin_ws/src/ 
+RUN catkin_create_pkg camera std_msgs rospy roscpp cv_bridge
+
+# setup python venv and install deps.
+# copy camery_node.py
+
+RUN python3 -m venv venv \
+    source /home/catkin_ws/src/camera/src/venv/bin/activate \
+    pip3 install rospy opencv-python 
+    
 COPY ./ros_entrypoint.sh /
-COPY ./camera_node.py /home/
+COPY ./camera_node.py /home/catkin_ws/src/camera/src
 
 
 
