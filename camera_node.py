@@ -3,15 +3,15 @@
 import rospy
 from sensor_msgs.msg import Image
 from cv_bridge import CvBridge
-import cv2
+import os, cv2
 
-
+URI = f"{os.uname()[1]}/image"
 
 class CameraNode:
     def __init__(self):
         rospy.init_node('camera_node', anonymous=True)
-        self.image_pub = rospy.Publisher('camera/image', Image, queue_size=10)
-        self.cap = cv2.VideoCapture(1)  # Assuming the camera is at index 0
+        self.image_pub = rospy.Publisher(URI, Image, queue_size=10)
+        self.cap = cv2.VideoCapture(0, cv2.CAP_FFMPEG)  # Assuming the camera is at index 0
         self.bridge = CvBridge()
 
     def capture_and_publish(self):
