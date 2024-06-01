@@ -13,6 +13,8 @@ ENV LANG C.UTF-8
 ENV LC_ALL C.UTF-8
 ENV ROS_PORT=11311
 ENV ROS_DISTRO=noetic
+ENV CAM_PKG_NAME=pi_zero_camera
+ENV CAM_PKG_PATH=/home/catkin_ws/src/"$CAM_PKG_NAME"
 
 EXPOSE 11311
 
@@ -49,7 +51,7 @@ RUN apt-get install -q -y --no-install-recommends \
 
 # bootstrap rosdep
 RUN rosdep init && \
-  rosdep update --rosdistro $ROS_DISTRO
+  rosdep update --rosdistro "$ROS_DISTRO"
 
 # setup keys
 RUN set -eux; \
@@ -69,28 +71,39 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     ros-noetic-ros-base=1.5.0-1* \
     && rm -rf /var/lib/apt/lists/*
 
+# install cv-bridge 
+RUN apt-get update && apt-get install "ros-$ROS_DISTRO-cv-bridge" -y \
+    && rm -rf /var/lib/apt/lists/*
 
 # Setup Ros workspace
 RUN source /opt/ros/"$ROS_DISTRO"/setup.bash -- \
     && mkdir -p /home/catkin_ws/src \
     && cd /home/catkin_ws \
     && catkin_make \
-    && chmod +x devel/setup.bash \
-    && source devel/setup.bash \
+    && chmod +x /home/catkin_ws/devel/setup.bash \
+    && source /home/catkin_ws/devel/setup.bash \
     && printf "#####[ROS ENVIRONMENT VARS]#####\n$(printenv | grep ROS)"
 
-# install cv-bridge 
-RUN apt-get update && apt-get install "ros-$ROS_DISTRO-cv-bridge" -y \
-    && rm -rf /var/lib/apt/lists/*
 
 #create camera package    
 RUN cd /home/catkin_ws/src/ \ 
-    && catkin_create_pkg camera std_msgs rospy roscpp cv_bridge
+    && catkin_create_pkg "$CAM_PKG_NAME" std_msgs rospy roscpp cv_bridge
+
 # coppy files     
 COPY ./ros_entrypoint.sh /
-COPY ./camera_node.py /home/catkin_ws/src/camera/src
-COPY ./camera.launch  /home/catkin_ws/src/camera/src
+COPY ./camera_node.py "${CAM_PKG_PATH}/src"
+COPY ./camera.launch  "${CAM_PKG_PATH}/src"
 
-RUN rosrun camera camera_node.py
+#Run camera_node.py
+RUN source /home/catkin_ws/devel/setup.bash \
+    && chmod +x "$CAM_PKG_PATH/src/camera_node.py" \
+    && chmod +x ros_entrypoint.sh
 
-ENTRYPOINT [ "ros_entrypoint.sh" ]
+
+COPY ./ros_entrypoint.sh /
+
+ENTRYPOINT ["/ros_entrypoint.sh"]
+CMD ["bash"]
+
+# CMD [ "ros_entrypoint.sh" ]
+# CMD [ "roslaunch". "$CAM_PKG_NAME", "camera.launch" ]
