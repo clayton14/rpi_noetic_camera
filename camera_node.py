@@ -7,7 +7,7 @@ import os, cv2
 
 #set rostopic URI to <hostname>/video
 if os.environ["HOSTNAME"] is not None:
-    URI = f"{os.environ["HOSTNAME"]}/video"
+    URI = f"{os.environ['HOSTNAME']}/video"
 else:
     URI = f"{os.uname()[1]}/video"
 
@@ -32,6 +32,8 @@ class CameraNode:
 if __name__ == '__main__':
     try:
         camera_node = CameraNode()
+        rospy.loginfo(f"\n#####[ROS CAMERA]#####\nvideo stream started on {URI}\n#####[ROS CAMERA]#####")
         camera_node.capture_and_publish()
-    except rospy.ROSInterruptException:
+    except rospy.ROSInterruptException as err:
         pass
+        # rospy.logerr(err)
