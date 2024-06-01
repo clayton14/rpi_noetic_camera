@@ -5,7 +5,11 @@ from sensor_msgs.msg import Image
 from cv_bridge import CvBridge
 import os, cv2
 
-URI = f"{os.uname()[1]}/video"
+#set rostopic URI to <hostname>/video
+if os.environ["HOSTNAME"] is not None:
+    URI = f"{os.environ["HOSTNAME"]}/video"
+else:
+    URI = f"{os.uname()[1]}/video"
 
 class CameraNode:
     def __init__(self):
