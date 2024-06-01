@@ -1,6 +1,6 @@
 # This is an auto generated Dockerfile for ros:ros-core
 # generated from docker_images/create_ros_core_image.Dockerfile.em
-FROM ros:noetic-ros-core-focal
+FROM ros:noetic-ros-base-focal
 
 # set default shell
 SHELL ["/bin/bash", "-c"]
@@ -18,25 +18,13 @@ ENV CAM_PKG_PATH=/home/catkin_ws/src/"$CAM_PKG_NAME"
 
 EXPOSE 11311
 
-# setup timezone
-# RUN echo 'Etc/UTC' > /etc/timezone && \
-#     ln -s /usr/share/zoneinfo/Etc/UTC /etc/localtime && \
-#     apt-get update && \
-#     apt-get install -q -y --no-install-recommends tzdata && \
-#     rm -rf /var/lib/apt/lists/*
-
 # install packages
 RUN apt-get update && apt-get upgrade -y  
 RUN apt-get install -q -y --no-install-recommends \
     build-essential \
+    python3-catkin-tools \
     python3-pip \
     python3.8-venv \
-    build-essential \
-    python3-rosdep \
-    python3-rosinstall \
-    python3-vcstools \
-    dirmngr \
-    gnupg2 \
     apt-utils \
     curl \
     wget \
@@ -48,28 +36,6 @@ RUN apt-get install -q -y --no-install-recommends \
     libboost-python-dev \
     && rm -rf /var/lib/apt/lists/*
 
-
-# bootstrap rosdep
-RUN rosdep init && \
-  rosdep update --rosdistro "$ROS_DISTRO"
-
-# setup keys
-RUN set -eux; \
-       key='C1CF6E31E6BADE8868B172B4F42ED6FBAB17C654'; \
-       export GNUPGHOME="$(mktemp -d)"; \
-       gpg --batch --keyserver keyserver.ubuntu.com --recv-keys "$key"; \
-       mkdir -p /usr/share/keyrings; \
-       gpg --batch --export "$key" > /usr/share/keyrings/ros1-latest-archive-keyring.gpg; \
-       gpgconf --kill all; \
-       rm -rf "$GNUPGHOME"
-
-# setup sources.list
-RUN echo "deb [ signed-by=/usr/share/keyrings/ros1-latest-archive-keyring.gpg ] http://packages.ros.org/ros/ubuntu focal main" > /etc/apt/sources.list.d/ros1-latest.list
-
-# install ros packages
-RUN apt-get update && apt-get install -y --no-install-recommends \
-    ros-noetic-ros-base=1.5.0-1* \
-    && rm -rf /var/lib/apt/lists/*
 
 # install cv-bridge 
 RUN apt-get update && apt-get install "ros-$ROS_DISTRO-cv-bridge" -y \
@@ -99,11 +65,9 @@ RUN source /home/catkin_ws/devel/setup.bash \
     && chmod +x "$CAM_PKG_PATH/src/camera_node.py" \
     && chmod +x ros_entrypoint.sh
 
-
-COPY ./ros_entrypoint.sh /
+#RUN echo "source /opt/ros/noetic/setup.bash" >> ~/.bashrc
 
 ENTRYPOINT ["/ros_entrypoint.sh"]
-CMD ["bash"]
 
+#CMD [ "roslaunch", "$CAM_PKG_NAME", "camera.launch" ]
 # CMD [ "ros_entrypoint.sh" ]
-# CMD [ "roslaunch". "$CAM_PKG_NAME", "camera.launch" ]
